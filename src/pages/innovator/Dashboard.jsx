@@ -10,12 +10,15 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ProposalForm from './ProposalForm';
+import LiveFundersShowcase from '../../components/innovator/LiveFundersShowcase';
+import { useAuth } from '../../context/AuthContext';
 
 const Dashboard = () => {
+  const { userData } = useAuth();
   const navigate = useNavigate();
   const [proposals, setProposals] = useState([]);
   const [innovations, setInnovations] = useState([]);
-  const [funders, setFunders] = useState([]);
+  // const [funders, setFunders] = useState([]); // Removed in favor of LiveFundersShowcase
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -39,13 +42,8 @@ const Dashboard = () => {
       setInnovations(data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
     });
 
-    // 3. Recommended Funders (Static fetch is fine for discovery)
-    const fetchFunders = async () => {
-      const qF = query(collection(db, "funders"));
-      const snapF = await getDocs(qF);
-      setFunders(snapF.docs.slice(0, 3).map(doc => ({ id: doc.id, ...doc.data() })));
-    };
-    fetchFunders();
+    // 3. Funders now handled by LiveFundersShowcase component
+
 
     // 4. Real-time Pending Requests
     const qR = query(collection(db, "funding_requests"), where("userId", "==", uid));
@@ -103,7 +101,7 @@ const Dashboard = () => {
           >
             Innovator <span className="text-primary-600 font-black">Control Center</span>
           </motion.h1>
-          <p className="text-slate-500 font-medium">Elevate your R&D projects through intelligence.</p>
+          <p className="text-slate-500 font-medium">Welcome back, <span className="text-slate-900 font-bold">{userData?.name || "Partner"}</span>. Elevate your R&D projects through intelligence.</p>
         </div>
         <div className="flex items-center space-x-3">
           <button onClick={handleSeed} className="btn-secondary flex items-center">
@@ -135,6 +133,11 @@ const Dashboard = () => {
             </div>
           </motion.div>
         ))}
+      </section>
+
+      {/* Live Funders Showcase (AI Powered) */}
+      <section>
+        <LiveFundersShowcase userProfile={userData} />
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -218,40 +221,13 @@ const Dashboard = () => {
         {/* Sidebar: Recommended Funders & Requests */}
         <aside className="lg:col-span-4 space-y-10">
 
-          {/* Recommended Funders Widget */}
-          <div className="premium-card p-8 space-y-8">
-            <div className="flex justify-between items-center">
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900 flex items-center">
-                <Award size={18} className="mr-2 text-indigo-600" /> Funder Intel
-              </h3>
-              <Link to="/innovator/funders" className="text-[10px] font-black text-primary-600 uppercase hover:underline">Scan All</Link>
-            </div>
-
-            <div className="space-y-6">
-              {loading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map(i => <div key={i} className="h-16 bg-slate-50 rounded-2xl animate-pulse" />)}
-                </div>
-              ) : funders.length === 0 ? (
-                <p className="text-center text-slate-400 text-xs font-bold italic py-4 uppercase">Initializing Match Engine...</p>
-              ) : (
-                funders.map(f => (
-                  <motion.div key={f.id} whileHover={{ x: 5 }} className="flex items-center justify-between group cursor-pointer" onClick={() => navigate(`/funders/${f.id}`)}>
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-primary-600 font-black text-xs group-hover:bg-primary-600 group-hover:text-white transition-all">
-                        {f?.name?.charAt(0) || "?"}
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-slate-900 leading-tight">{f?.name || "Anonymous Funder"}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{f?.focus?.[0]} • {f?.minBudget ? `$${f?.minBudget / 1000}k+` : 'Seed'}</p>
-                      </div>
-                    </div>
-                    <div className="bg-primary-50 text-primary-600 px-2 py-1 rounded-lg text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity">MATCH</div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </div>
+          {/* Recommended Funders Widget - REPLACED by LiveFundersShowcase, potentially add something else here or remove */}
+          {/* We keep the Sidebar structure but maybe remove the redundant funders list or replace with "Saved Funders" later */}
+          {/* For now, we'll hide the old list to avoid duplication, or keep it as a simple list? 
+              User asked to "replace" basic funder list. Let's comment it out or remove. 
+              Actually, let's keep the sidebar but make it "Recent Matches" or "Saved" in future.
+              For now, I will remove the old widget to avoid clutter. 
+          */}
 
           {/* Pending Requests Widget */}
           <div className="premium-card p-8 space-y-8 bg-slate-900 text-white shadow-2xl shadow-slate-950/40 border-none">

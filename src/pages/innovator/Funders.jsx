@@ -8,8 +8,13 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import LiveFundersShowcase from '../../components/innovator/LiveFundersShowcase';
+import { useAuth } from '../../context/AuthContext';
+import { seedDemoData } from '../../utils/seedData'; // Import seed utility
+import { Database } from 'lucide-react';
 
 const Funders = () => {
+  const { userData } = useAuth();
   const navigate = useNavigate();
   const [funders, setFunders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,11 +34,14 @@ const Funders = () => {
         console.warn("No funders found in Firestore. Please seed demo data.");
         setFunders([]);
       } else {
-        setFunders(snap.docs.map(doc => ({
+        const allFunders = snap.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
           matchScore: doc.data().matchScore || Math.floor(Math.random() * (98 - 85 + 1)) + 85
-        })));
+        }));
+
+        // Filter out anonymous entries
+        setFunders(allFunders.filter(f => f.name && !f.name.toLowerCase().includes('anonymous')));
       }
     } catch (err) {
       console.error(err);
@@ -42,19 +50,51 @@ const Funders = () => {
     }
   };
 
-  const filteredFunders = funders.filter(f =>
-    (f.name?.toLowerCase() || '').includes(search.toLowerCase()) ||
-    f.focus?.some(focus => focus.toLowerCase().includes(search.toLowerCase()))
-  );
+  const [selectedDomain, setSelectedDomain] = useState('All');
+  const [selectedType, setSelectedType] = useState('All');
+
+  // Extract unique domains and types for filter dropdowns
+  const domains = ['All', ...new Set(funders.flatMap(f => f.focus || []))];
+  const types = ['All', ...new Set(funders.map(f => f.type || 'Enterprise'))];
+
+  const filteredFunders = funders.filter(f => {
+    const matchesSearch = (f.name?.toLowerCase() || '').includes(search.toLowerCase()) ||
+      f.focus?.some(focus => focus.toLowerCase().includes(search.toLowerCase()));
+
+    const matchesDomain = selectedDomain === 'All' || f.focus?.includes(selectedDomain);
+    const matchesType = selectedType === 'All' || (f.type || 'Enterprise') === selectedType;
+
+    return matchesSearch && matchesDomain && matchesType;
+  });
 
   return (
     <div className="max-w-7xl mx-auto space-y-10">
-      <header className="space-y-1">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Funder <span className="text-primary-600">Discovery</span></h1>
-        <p className="text-slate-500 font-medium text-lg">Connect with global capital optimized for your research domain.</p>
+      <header className="space-y-1 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Funder <span className="text-primary-600">Discovery</span></h1>
+          <p className="text-slate-500 font-medium text-lg">Connect with global capital optimized for your research domain.</p>
+        </div>
+
+        {/* Helper Seed Button for Demo */}
+        <button
+          onClick={async () => {
+            if (window.confirm("Populate 'Big Firm' demo data (Tata, Reliance, etc.)?")) {
+              await seedDemoData();
+              window.location.reload();
+            }
+          }}
+          className="flex items-center text-xs font-bold text-slate-400 hover:text-primary-600 transition-colors uppercase tracking-widest"
+        >
+          <Database size={14} className="mr-1" /> Load Demo Data
+        </button>
       </header>
 
-      <div className="flex flex-col md:flex-row items-center gap-4">
+      {/* Live AI Showcase */}
+      <section>
+        <LiveFundersShowcase userProfile={userData} />
+      </section>
+
+      <div className="flex flex-col md:flex-row items-center gap-4 pt-10 border-t border-slate-200">
         <div className="flex-1 relative w-full">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           <input
@@ -66,12 +106,29 @@ const Funders = () => {
           />
         </div>
         <div className="flex gap-2">
-          <button className="px-6 py-4 bg-white border border-slate-200 rounded-2xl font-black text-[11px] uppercase tracking-widest text-slate-500 flex items-center hover:bg-slate-50 transition-all">
-            <Filter size={16} className="mr-2" /> All Domains
-          </button>
-          <button className="px-6 py-4 bg-white border border-slate-200 rounded-2xl font-black text-[11px] uppercase tracking-widest text-slate-500 flex items-center hover:bg-slate-50 transition-all">
-            <Landmark size={16} className="mr-2" /> Institution Type
-          </button>
+          {/* Domain Filter */}
+          <div className="relative">
+            <select
+              value={selectedDomain}
+              onChange={(e) => setSelectedDomain(e.target.value)}
+              className="appearance-none pl-6 pr-10 py-4 bg-white border border-slate-200 rounded-2xl font-black text-[11px] uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all cursor-pointer outline-none focus:border-primary-500"
+            >
+              {domains.map(d => <option key={d} value={d}>{d === 'All' ? 'All Domains' : d}</option>)}
+            </select>
+            <Filter size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
+
+          {/* Type Filter */}
+          <div className="relative">
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="appearance-none pl-6 pr-10 py-4 bg-white border border-slate-200 rounded-2xl font-black text-[11px] uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all cursor-pointer outline-none focus:border-primary-500"
+            >
+              {types.map(t => <option key={t} value={t}>{t === 'All' ? 'All Types' : t}</option>)}
+            </select>
+            <Landmark size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
         </div>
       </div>
 
@@ -105,7 +162,7 @@ const Funders = () => {
                     {funder?.name?.charAt(0) || "?"}
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-xl font-black text-slate-900 group-hover:text-primary-600 transition-colors">{funder?.name || "Anonymous Funder"}</h3>
+                    <h3 className="text-xl font-black text-slate-900 group-hover:text-primary-600 transition-colors">{funder?.name}</h3>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Established Fund</p>
                   </div>
                 </div>
@@ -136,9 +193,16 @@ const Funders = () => {
                   </div>
                 </div>
 
-                <button className="w-full py-4 bg-slate-50 text-slate-900 font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center group-hover:bg-primary-600 group-hover:text-white transition-all">
-                  View Intel Profile <ArrowUpRight size={16} className="ml-2" />
-                </button>
+                <div className="flex gap-2">
+                  <button className="flex-1 py-4 bg-slate-50 text-slate-900 font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    View Profile
+                  </button>
+                  <button
+                    onClick={() => navigate(`/innovator/funders/${funder.id}`, { state: { openRequest: true } })}
+                    className="flex-1 py-4 bg-primary-600 text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center hover:bg-primary-700 transition-all shadow-lg shadow-primary-500/30 relative z-20">
+                    Request Fund <Zap size={14} className="ml-2 fill-white" />
+                  </button>
+                </div>
               </div>
             </motion.div>
           ))}

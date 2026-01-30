@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth } from '../../firebase/config';
+import { db, auth, functions } from '../../firebase/config';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { Sparkles, Save, Plus, X, User, Briefcase, Globe, Award, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -43,13 +44,14 @@ const Profile = () => {
   };
 
   const generateAIHelp = async () => {
-    if (!profile.domain || profile.skills.length === 0) {
-      alert("Please enter a domain and at least one skill first.");
+    if (!profile.domain) {
+      alert("Please enter a domain first.");
       return;
     }
     setAiLoading(true);
     try {
-      const result = await generateProfileAI({
+      const generateProfileHelper = httpsCallable(functions, 'generateProfileHelper');
+      const result = await generateProfileHelper({
         domain: profile.domain,
         skills: profile.skills,
         experience: profile.experience
@@ -59,6 +61,7 @@ const Profile = () => {
       setSuggestedSkills(suggestions);
     } catch (err) {
       console.error(err);
+      alert("AI generation failed. Please try again.");
     } finally {
       setAiLoading(false);
     }

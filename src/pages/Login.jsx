@@ -35,8 +35,8 @@ const Login = ({ role }) => {
       }
     } catch (err) {
       console.error('Login error:', err);
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError('Invalid email or password.');
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('Invalid email or password. You are using Live Authentication; please ensure you have registered on the live site.');
       } else if (err.code === 'auth/invalid-email') {
         setError('Invalid email address.');
       } else {

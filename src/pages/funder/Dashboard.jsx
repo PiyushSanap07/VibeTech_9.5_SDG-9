@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db, functions } from '../../firebase/config';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, updateDoc, doc, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../context/AuthContext';
 import { seedDemoData } from '../../utils/seedData';
@@ -8,7 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
-import { Sparkles, TrendingUp, AlertCircle, CheckCircle, PieChart as PieIcon, BarChart3, Database } from 'lucide-react';
+import { Sparkles, TrendingUp, AlertCircle, CheckCircle, PieChart as PieIcon, BarChart3, Database, Users } from 'lucide-react';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
@@ -23,9 +23,49 @@ const Dashboard = () => {
 
   const COLORS = ['#0ea5e9', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e'];
 
+  const [fundingRequests, setFundingRequests] = useState([]);
+
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+
+    // Listen for incoming requests
+    if (currentUser?.uid) {
+      const q = query(
+        collection(db, 'funding_requests'),
+        where('funderId', '==', currentUser.uid),
+        where('status', '==', 'Pending')
+      );
+      const unsub = onSnapshot(q, (snap) => {
+        setFundingRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+      return () => unsub();
+    }
+  }, [currentUser]);
+
+  const handleRequestAction = async (request, status) => {
+    try {
+      // 1. Update Request Status
+      await updateDoc(doc(db, "funding_requests", request.id), {
+        status: status
+      });
+
+      // 2. Notify Innovator
+      if (status === 'Accepted') {
+        await addDoc(collection(db, "notifications"), {
+          userId: request.userId,
+          message: `Great news! ${currentUser.displayName || "A Funder"} has accepted your funding request for Innovation #${request.innovationId.substring(0, 5)}.`,
+          type: 'funded',
+          priority: 'High',
+          read: false,
+          createdAt: serverTimestamp()
+        });
+        alert(`Request accepted! Innovator notified.`);
+      }
+    } catch (err) {
+      console.error("Error updating request:", err);
+      alert("Action failed. Try again.");
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -121,6 +161,54 @@ const Dashboard = () => {
         <button className="relative z-10 bg-white text-primary-700 px-6 py-3 rounded-2xl font-bold hover:bg-primary-50 transition-all shadow-lg">
           Generate Full Insight Report
         </button>
+      </div>
+
+      {/* Incoming Funding Requests */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+          <Users className="w-5 h-5 text-primary-600" /> Incoming Proposals
+        </h2>
+        {fundingRequests.length === 0 ? (
+          <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400">
+            No pending requests.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {fundingRequests.map(req => (
+              <div key={req.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary-600 bg-primary-50 px-2 py-1 rounded-lg">New Request</span>
+                    <h3 className="font-bold text-slate-900 mt-2">Innovation #{req.innovationId.substring(0, 5)}</h3>
+                    {/* Ideally we fetch Innovation title here, sticking to ID for now or passing it from sender */}
+                  </div>
+                  <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                    {req.createdAt?.toDate ? new Date(req.createdAt.toDate()).toLocaleDateString() : 'Just now'}
+                  </span>
+                </div>
+
+                <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl italic border border-slate-100">
+                  "{req.lastMessage}"
+                </p>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => handleRequestAction(req, 'Accepted')}
+                    className="flex-1 btn-primary py-2 text-xs flex items-center justify-center gap-1"
+                  >
+                    <CheckCircle size={14} /> Accept
+                  </button>
+                  <button
+                    onClick={() => handleRequestAction(req, 'Rejected')}
+                    className="flex-1 py-2 rounded-xl border border-slate-200 font-bold text-slate-500 hover:bg-slate-50 text-xs"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Charts Grid */}

@@ -24,7 +24,7 @@ async function callGemini(prompt) {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-1.5-flash-001",
     });
 
     console.log("Calling Gemini AI (gemini-2.5-flash)...");
@@ -159,6 +159,89 @@ exports.predictFundUtilization = onCall({
   Milestones: ${JSON.stringify(milestones)}
   
   Return JSON: { "utilizationEfficiency": 0.85, "timingWarnings": [], "predictedReleaseDates": {} }`;
+
+  return await callGemini(prompt);
+});
+
+// 8. Profile Generator (Bio & Skills)
+exports.generateProfileHelper = onCall({ cors: true, secrets: [GEMINI_API_KEY] }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "User must be logged in");
+
+  const { domain, skills, experience } = request.data;
+  const prompt = `Create a professional profile bio and suggest related skills for an innovator.
+  Domain: ${domain}
+  Current Skills: ${JSON.stringify(skills)}
+  Experience: ${experience}
+  
+  Task:
+  1. Write a compelling 1-paragraph bio (max 100 words) suitable for investors.
+  2. Suggest 5 additional high-value skills relevant to the domain.
+  
+  Return JSON: { "bio": "...", "suggestedSkills": ["Skill1", "Skill2", ...] }`;
+
+  return await callGemini(prompt);
+});
+
+// 9. Recommend Funders (AI Matching)
+exports.recommendFunders = onCall({ cors: true, secrets: [GEMINI_API_KEY] }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "User must be logged in");
+
+  const { innovatorProfile, availableFunders, innovation } = request.data;
+
+  // If no funders provided, we can't rank.
+  if (!availableFunders || availableFunders.length === 0) {
+    return { recommendedFunders: [] };
+  }
+
+  let promptContext = "";
+  if (innovation) {
+    promptContext = `
+    FOCUS ON THIS SPECIFIC INNOVATION:
+    Title: ${innovation.title}
+    Description: ${innovation.description}
+    Domain: ${innovation.domain}
+    `;
+  } else {
+    promptContext = `
+    FOCUS ON THIS INNOVATOR PROFILE:
+    ${JSON.stringify(innovatorProfile)}
+    `;
+  }
+
+  const prompt = `Match the best potential funders from the provided list based on the context below.
+  ${promptContext}
+  
+  Available Funders:
+  ${JSON.stringify(availableFunders.map(f => ({ id: f.id, name: f.name, focus: f.focus, type: f.type, details: f.details })))} 
+  
+  Task:
+  Select the top 3 matches.
+  For each, assign a "matchScore" (0-100) and explain WHY they are a good match in 1 short sentence.
+  
+  Return JSON: { 
+    "recommendations": [ 
+      { "funderId": "id", "matchReason": "...", "matchScore": 95 } 
+    ] 
+  }`;
+
+  return await callGemini(prompt);
+});
+
+// 10. Generate Pitch Helper (Draft Funding Request)
+exports.generatePitchHelper = onCall({ cors: true, secrets: [GEMINI_API_KEY] }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "User must be logged in");
+
+  const { innovation, funder } = request.data;
+  const prompt = `Draft a concise, professional funding request message to a potential funder.
+  
+  Funder: ${funder.name} (Focus: ${funder.focus?.join(', ')})
+  Innovation: ${innovation.title}
+  Description: ${innovation.description}
+  
+  Task:
+  Write a 2-3 sentence introductory message that highlights the alignment between the innovation and the funder's focus. Keep it professional and persuasive.
+  
+  Return JSON: { "pitch": "Dear [Funder Name], ..." }`;
 
   return await callGemini(prompt);
 });
