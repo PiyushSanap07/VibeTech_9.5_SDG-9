@@ -7,7 +7,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
 admin.initializeApp();
-setGlobalOptions({
+setGlobalOptions({ 
   maxInstances: 10,
   region: "us-central1"
 });
@@ -15,7 +15,7 @@ setGlobalOptions({
 // Helper to call Gemini
 async function callGemini(prompt) {
   const apiKey = process.env.GEMINI_API_KEY || GEMINI_API_KEY.value();
-
+  
   if (!apiKey || apiKey === "dummy_key") {
     console.error("CRITICAL ERROR: GEMINI_API_KEY is not set in functions/.env.local or Secrets Manager");
     throw new HttpsError("internal", "AI Configuration Error: API Key missing");
@@ -26,7 +26,7 @@ async function callGemini(prompt) {
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
     });
-
+    
     console.log("Calling Gemini AI (gemini-2.5-flash)...");
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -38,7 +38,7 @@ async function callGemini(prompt) {
       console.error("Gemini non-JSON response:", text);
       throw new Error("AI returned invalid data format. Please try again.");
     }
-
+    
     return JSON.parse(jsonMatch[0]);
   } catch (error) {
     console.error("Gemini Execution Error:", error);
@@ -54,17 +54,17 @@ exports.ping = onCall({ cors: true }, async (request) => {
 // 1. Suggest Investment Domains & Budget
 exports.suggestInvestmentStrategy = onCall({ cors: true, secrets: [GEMINI_API_KEY] }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "User must be logged in");
-
+  
   const { preferences } = request.data;
   const prompt = `As an AI investment advisor for an R&D platform, suggest 3 optimal investment domains and a balanced budget allocation for a funder with these preferences: ${JSON.stringify(preferences)}. Return response in JSON format: { "domains": [], "budgetAllocation": { "domain": percentage }, "rationale": "" }`;
-
+  
   return await callGemini(prompt);
 });
 
 // 2. AI Matching - Rank Proposals
 exports.rankProposals = onCall({ cors: true, secrets: [GEMINI_API_KEY] }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "User must be logged in");
-
+  
   const { funderPrefs, proposals } = request.data;
   const prompt = `Match the following R&D proposals to the funder's investment preferences.
   
@@ -83,41 +83,41 @@ exports.rankProposals = onCall({ cors: true, secrets: [GEMINI_API_KEY] }, async 
   
   IMPORTANT: Return ONLY a valid JSON array of objects. No markdown, no preamble.
   FORMAT: [ { "id": "proposalId", "matchScore": 85, "riskAlignmentScore": 70, "roiPotential": "High", "matchReason": "..." } ]`;
-
+  
   return await callGemini(prompt);
 });
 
 // 3. Proposal Review - Summarize and Flag
 exports.reviewProposal = onCall({ cors: true, secrets: [GEMINI_API_KEY] }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "User must be logged in");
-
+  
   const { proposal } = request.data;
   const prompt = `Review this R&D proposal and provide a summary, strengths, weaknesses, and flag high-risk sections.
   Proposal: ${JSON.stringify(proposal)}
   
   Return JSON: { "summary": "", "strengths": [], "weaknesses": [], "risks": { "budget": "Low/Med/High", "timeline": "", "feasibility": "" } }`;
-
+  
   return await callGemini(prompt);
 });
 
 // 4. Decision Support
 exports.getDecisionSupport = onCall({ cors: true, secrets: [GEMINI_API_KEY] }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "User must be logged in");
-
+  
   const { proposal, funderPrefs } = request.data;
   const prompt = `Provide a decision recommendation (Accept/Reject) for this proposal based on funder preferences.
   Proposal: ${JSON.stringify(proposal)}
   Funder Prefs: ${JSON.stringify(funderPrefs)}
   
   Return JSON: { "recommendation": "Accept", "confidenceScore": 90, "rationale": "" }`;
-
+  
   return await callGemini(prompt);
 });
 
 // 5. Portfolio Analytics & Insights
 exports.getPortfolioInsights = onCall({ cors: true, secrets: [GEMINI_API_KEY] }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "User must be logged in");
-
+  
   const { investments } = request.data;
   const prompt = `Analyze this investment portfolio and provide insights.
   Investments: ${JSON.stringify(investments)}
@@ -128,37 +128,34 @@ exports.getPortfolioInsights = onCall({ cors: true, secrets: [GEMINI_API_KEY] },
   - Overall portfolio insight string
   
   Return JSON: { "projects": [ { "id": "", "successProbability": 80, "isAtRisk": false } ], "generalInsight": "" }`;
-
+  
   return await callGemini(prompt);
 });
 
 // 6. Milestone Approval Assistance
 exports.reviewMilestone = onCall({ cors: true, secrets: [GEMINI_API_KEY] }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "User must be logged in");
-
+  
   const { milestone, projectPlan } = request.data;
   const prompt = `Review this milestone submission against the project plan.
   Submission: ${JSON.stringify(milestone)}
   Project Plan: ${JSON.stringify(projectPlan)}
   
   Return JSON: { "summary": "", "progressPercentage": 0, "isAligned": true, "riskWarnings": [] }`;
-
+  
   return await callGemini(prompt);
 });
 
 // 7. Funding & Escrow Monitoring
-exports.predictFundUtilization = onCall({
-  cors: true,
-  secrets: [GEMINI_API_KEY]
-}, async (request) => {
+exports.predictFundUtilization = onCall({ cors: true, secrets: [GEMINI_API_KEY] }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "User must be logged in");
-
+  
   const { escrowData, milestones } = request.data;
   const prompt = `Predict fund utilization efficiency and suggest release timing warnings based on these milestones.
   Escrow Data: ${JSON.stringify(escrowData)}
   Milestones: ${JSON.stringify(milestones)}
   
   Return JSON: { "utilizationEfficiency": 0.85, "timingWarnings": [], "predictedReleaseDates": {} }`;
-
+  
   return await callGemini(prompt);
 });
