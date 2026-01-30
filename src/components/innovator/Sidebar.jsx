@@ -15,7 +15,6 @@ const Sidebar = ({ user }) => {
     { path: '/innovator/innovations', icon: Lightbulb, label: 'Innovations' },
     { path: '/innovator/funders', icon: Users, label: 'Funders' },
     { path: '/innovator/messages', icon: MessageSquare, label: 'Messages' },
-    { path: '/innovator/proposals', icon: FileText, label: 'Proposals' },
     { path: '/innovator/milestones', icon: ListChecks, label: 'Milestones' },
     { path: '/innovator/wallet', icon: Wallet, label: 'Wallet' },
   ];

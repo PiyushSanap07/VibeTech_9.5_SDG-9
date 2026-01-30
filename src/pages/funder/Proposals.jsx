@@ -20,7 +20,8 @@ const Proposals = () => {
 
   const fetchProposals = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'proposals'));
+      // Fetch real innovations from "innovations" collection
+      const querySnapshot = await getDocs(collection(db, 'innovations'));
       const docs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setProposals(docs);
     } catch (error) {

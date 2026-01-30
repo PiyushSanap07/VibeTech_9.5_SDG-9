@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db, functions } from '../../firebase/config';
-import { collection, getDocs, query, where, updateDoc, doc, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, query, where, updateDoc, doc, addDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../context/AuthContext';
 import { seedDemoData } from '../../utils/seedData';
@@ -45,22 +45,49 @@ const Dashboard = () => {
   const handleRequestAction = async (request, status) => {
     try {
       // 1. Update Request Status
+      // Status 'Approved' will trigger the Innovator's NotificationContext listener
       await updateDoc(doc(db, "funding_requests", request.id), {
         status: status
       });
 
-      // 2. Notify Innovator
-      if (status === 'Accepted') {
-        await addDoc(collection(db, "notifications"), {
-          userId: request.userId,
-          message: `Great news! ${currentUser.displayName || "A Funder"} has accepted your funding request for Innovation #${request.innovationId.substring(0, 5)}.`,
-          type: 'funded',
-          priority: 'High',
-          read: false,
+      // 2. If Approved, Start Conversation
+      if (status === 'Approved') {
+        const conversationId = [currentUser.uid, request.userId].sort().join('_');
+        const convRef = doc(db, 'conversations', conversationId);
+
+        // Create/Update Conversation
+        await setDoc(convRef, {
+          participants: [currentUser.uid, request.userId],
+          funderId: currentUser.uid,
+          funderName: currentUser.displayName || "Funder",
+          innovatorId: request.userId,
+          innovatorName: request.userName || "Innovator",
+          lastMessage: `Funding Request Approved for ${request.innovationTitle}`,
+          lastUpdate: serverTimestamp(),
+          online: true
+        }, { merge: true });
+
+        // Add System Message
+        await addDoc(collection(db, 'conversations', conversationId, 'messages'), {
+          text: `System: Funding Request Approved for "${request.innovationTitle}". Discussion opened.`,
+          senderId: 'system',
+          timestamp: serverTimestamp()
+        });
+
+        // 3. Create Investment Record (for Dashboard Stats)
+        await addDoc(collection(db, 'investments'), {
+          funderId: currentUser.uid,
+          innovatorId: request.userId,
+          innovationId: request.innovationId,
+          innovationTitle: request.innovationTitle,
+          amount: request.requestedAmount || 0,
+          status: 'active', // This triggers the "Active Projects" count
+          domain: request.innovationDomain || 'General',
           createdAt: serverTimestamp()
         });
-        alert(`Request accepted! Innovator notified.`);
       }
+
+      alert(`Request has been ${status.toLowerCase()}.`);
     } catch (err) {
       console.error("Error updating request:", err);
       alert("Action failed. Try again.");
@@ -179,8 +206,8 @@ const Dashboard = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[10px] font-black uppercase tracking-widest text-primary-600 bg-primary-50 px-2 py-1 rounded-lg">New Request</span>
-                    <h3 className="font-bold text-slate-900 mt-2">Innovation #{req.innovationId.substring(0, 5)}</h3>
-                    {/* Ideally we fetch Innovation title here, sticking to ID for now or passing it from sender */}
+                    <h3 className="font-bold text-slate-900 mt-2">{req.innovationTitle || `Innovation #${req.innovationId.substring(0, 5)}`}</h3>
+                    <p className="text-xs font-bold text-emerald-600 mt-1">Requested: ${Number(req.requestedAmount || 0).toLocaleString()}</p>
                   </div>
                   <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
                     {req.createdAt?.toDate ? new Date(req.createdAt.toDate()).toLocaleDateString() : 'Just now'}
@@ -193,10 +220,10 @@ const Dashboard = () => {
 
                 <div className="flex gap-2 pt-2">
                   <button
-                    onClick={() => handleRequestAction(req, 'Accepted')}
+                    onClick={() => handleRequestAction(req, 'Approved')}
                     className="flex-1 btn-primary py-2 text-xs flex items-center justify-center gap-1"
                   >
-                    <CheckCircle size={14} /> Accept
+                    <CheckCircle size={14} /> Approve
                   </button>
                   <button
                     onClick={() => handleRequestAction(req, 'Rejected')}

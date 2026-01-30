@@ -24,9 +24,6 @@ import InnovatorInnovations from './pages/innovator/Innovations';
 import InnovatorFunders from './pages/innovator/Funders';
 import InnovatorFunderProfile from './pages/innovator/FunderProfile';
 import InnovatorMessages from './pages/innovator/Messages';
-import InnovatorProposals from './pages/innovator/Proposals';
-import InnovatorProposalDetails from './pages/innovator/ProposalDetails';
-import InnovatorProposalForm from './pages/innovator/ProposalForm';
 import InnovatorMilestones from './pages/innovator/Milestones';
 import InnovatorWallet from './pages/innovator/Wallet';
 
@@ -56,65 +53,66 @@ const AuthRedirect = () => {
   return <LandingPage />;
 };
 
+import { NotificationProvider } from './context/NotificationContext';
+
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<AuthRedirect />} />
+      <NotificationProvider>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<AuthRedirect />} />
 
-          {/* Innovator Auth Routes */}
-          <Route path="/innovator/login" element={<Login role="innovator" />} />
-          <Route path="/innovator/register" element={<Register role="innovator" />} />
+            {/* Innovator Auth Routes */}
+            <Route path="/innovator/login" element={<Login role="innovator" />} />
+            <Route path="/innovator/register" element={<Register role="innovator" />} />
 
-          {/* Funder Auth Routes */}
-          <Route path="/funder/login" element={<Login role="funder" />} />
-          <Route path="/funder/register" element={<Register role="funder" />} />
+            {/* Funder Auth Routes */}
+            <Route path="/funder/login" element={<Login role="funder" />} />
+            <Route path="/funder/register" element={<Register role="funder" />} />
 
-          {/* Funder Routes */}
-          <Route
-            path="/funder"
-            element={
-              <ProtectedRoute allowedRole="funder">
-                <FunderLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/funder/dashboard" replace />} />
-            <Route path="dashboard" element={<FunderDashboard />} />
-            <Route path="proposals" element={<FunderProposals />} />
-            <Route path="portfolio" element={<FunderPortfolio />} />
-            <Route path="profile" element={<FunderProfile />} />
-          </Route>
+            {/* Funder Routes */}
+            <Route
+              path="/funder"
+              element={
+                <ProtectedRoute allowedRole="funder">
+                  <FunderLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/funder/dashboard" replace />} />
+              <Route path="dashboard" element={<FunderDashboard />} />
+              <Route path="proposals" element={<FunderProposals />} />
+              <Route path="portfolio" element={<FunderPortfolio />} />
+              <Route path="profile" element={<FunderProfile />} />
+            </Route>
 
-          {/* Innovator Routes */}
-          <Route
-            path="/innovator"
-            element={
-              <ProtectedRoute allowedRole="innovator">
-                <InnovatorLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/innovator/dashboard" replace />} />
-            <Route path="dashboard" element={<InnovatorDashboard />} />
-            <Route path="profile" element={<InnovatorProfile />} />
-            <Route path="innovations" element={<InnovatorInnovations />} />
-            <Route path="funders" element={<InnovatorFunders />} />
-            <Route path="funders/:id" element={<InnovatorFunderProfile />} />
-            <Route path="messages" element={<InnovatorMessages />} />
-            <Route path="proposals" element={<InnovatorProposals />} />
-            <Route path="proposals/new" element={<InnovatorProposalForm />} />
-            <Route path="proposals/:id" element={<InnovatorProposalDetails />} />
-            <Route path="milestones" element={<InnovatorMilestones />} />
-            <Route path="wallet" element={<InnovatorWallet />} />
-          </Route>
+            {/* Innovator Routes */}
+            <Route
+              path="/innovator"
+              element={
+                <ProtectedRoute allowedRole="innovator">
+                  <InnovatorLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/innovator/dashboard" replace />} />
+              <Route path="dashboard" element={<InnovatorDashboard />} />
+              <Route path="profile" element={<InnovatorProfile />} />
+              <Route path="innovations" element={<InnovatorInnovations />} />
+              <Route path="funders" element={<InnovatorFunders />} />
+              <Route path="funders/:id" element={<InnovatorFunderProfile />} />
+              <Route path="messages" element={<InnovatorMessages />} />
+              <Route path="milestones" element={<InnovatorMilestones />} />
+              <Route path="wallet" element={<InnovatorWallet />} />
+            </Route>
 
-          {/* Catch all - redirect to home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+            {/* Catch all - redirect to home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

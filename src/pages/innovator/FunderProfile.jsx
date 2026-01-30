@@ -19,6 +19,7 @@ const FunderProfile = () => {
   const [requestLoading, setRequestLoading] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [selectedInnovation, setSelectedInnovation] = useState('');
+  const [requestAmount, setRequestAmount] = useState('');
   const [innovations, setInnovations] = useState([]);
   const [outreachMessage, setOutreachMessage] = useState('');
   const [isGeneratingPitch, setIsGeneratingPitch] = useState(false);
@@ -37,7 +38,8 @@ const FunderProfile = () => {
 
   const fetchFunder = async () => {
     try {
-      const docSnap = await getDoc(doc(db, "funders", id));
+      // Fetch from "users" collection, as that is where all registered users live
+      const docSnap = await getDoc(doc(db, "users", id));
       if (docSnap.exists()) setFunder(docSnap.data());
     } catch (err) {
       console.error(err);
@@ -59,11 +61,17 @@ const FunderProfile = () => {
     e.preventDefault();
     setRequestLoading(true);
     try {
+      const selectedInn = innovations.find(i => i.id === selectedInnovation);
+
       await addDoc(collection(db, "funding_requests"), {
         funderId: id,
         funderName: funder?.name || "Anonymous Funder",
         innovationId: selectedInnovation,
+        innovationTitle: selectedInn?.title || "Untitled Innovation",
+        innovationDomain: selectedInn?.domain || "General",
         userId: auth.currentUser.uid,
+        userName: auth.currentUser.displayName || "Innovator",
+        requestedAmount: Number(requestAmount) || 0,
         status: 'Pending',
         lastMessage: outreachMessage || 'Funding request initiated.',
         createdAt: serverTimestamp()
@@ -71,6 +79,7 @@ const FunderProfile = () => {
       setShowRequestModal(false);
       setOutreachMessage('');
       setSelectedInnovation('');
+      setRequestAmount('');
       alert("Funding request sent successfully!");
     } catch (err) {
       console.error(err);
@@ -276,6 +285,19 @@ const FunderProfile = () => {
                         <option key={inn.id} value={inn.id}>{inn.title}</option>
                       ))}
                     </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Requested Amount ($)</label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      placeholder="e.g. 50000"
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-semibold appearance-none"
+                      value={requestAmount}
+                      onChange={(e) => setRequestAmount(e.target.value)}
+                    />
                   </div>
 
                   <div className="space-y-2">

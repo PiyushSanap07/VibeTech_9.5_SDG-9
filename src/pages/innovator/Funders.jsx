@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../firebase/config';
-import { collection, getDocs, query, limit } from 'firebase/firestore';
+import { collection, getDocs, query, limit, where } from 'firebase/firestore';
 import {
   Search, Filter, Users, Award, Zap,
   ArrowUpRight, Target, ShieldCheck, Star,
@@ -27,11 +27,11 @@ const Funders = () => {
   const fetchFunders = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, "funders"), limit(20));
+      // Query "users" collection for users with role "funder"
+      const q = query(collection(db, "users"), where("role", "==", "funder"), limit(20));
       const snap = await getDocs(q);
 
       if (snap.empty) {
-        console.warn("No funders found in Firestore. Please seed demo data.");
         setFunders([]);
       } else {
         const allFunders = snap.docs.map(doc => ({
@@ -42,6 +42,7 @@ const Funders = () => {
 
         // Filter out anonymous entries
         setFunders(allFunders.filter(f => f.name && !f.name.toLowerCase().includes('anonymous')));
+
       }
     } catch (err) {
       console.error(err);

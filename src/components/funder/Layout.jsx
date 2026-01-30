@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { LayoutDashboard, FileText, Briefcase, User, LogOut, BrainCircuit } from 'lucide-react';
+import NavNotifications from '../common/NavNotifications';
 import { clsx } from 'clsx';
 
 const Layout = () => {
@@ -72,7 +73,13 @@ const Layout = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto flex flex-col">
+        <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-30">
+          <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <NavNotifications />
+          </div>
+        </header>
         <div className="p-8">
           <Outlet />
         </div>
