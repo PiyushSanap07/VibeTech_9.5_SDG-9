@@ -52,23 +52,8 @@ const Layout = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
-          <div className="flex items-center gap-3 px-4 py-3 mb-2 bg-slate-50 rounded-xl">
-            <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-sm">
-              {currentUser?.email?.[0].toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900 truncate">{currentUser?.email}</p>
-              <p className="text-xs text-slate-500">Funder</p>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-          >
-            <LogOut className="w-5 h-5" />
-            Sign Out
-          </button>
+        <div className="p-4 border-t border-slate-100 text-center">
+          <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">© 2024 VibeTech</p>
         </div>
       </aside>
 
@@ -76,8 +61,27 @@ const Layout = () => {
       <main className="flex-1 overflow-auto flex flex-col">
         <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-30">
           <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <NavNotifications />
+
+            <div className="h-6 w-px bg-slate-200"></div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col items-end">
+                <span className="text-sm font-bold text-slate-900">{currentUser?.email}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Funder</span>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-sm border border-slate-200">
+                {currentUser?.email?.[0].toUpperCase()}
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                title="Sign Out"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </header>
         <div className="p-8">

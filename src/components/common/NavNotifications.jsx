@@ -11,8 +11,11 @@ const NavNotifications = () => {
     const getStatusConfig = (status) => {
         switch (status) {
             case 'Approved': return { color: 'bg-green-100 text-green-600', icon: Check };
+            case 'Verified': return { color: 'bg-emerald-100 text-emerald-600', icon: Check };
             case 'Rejected': return { color: 'bg-red-100 text-red-600', icon: X };
-            case 'Sent': return { color: 'bg-blue-100 text-blue-600', icon: Info }; // Incoming for funder
+            case 'Pending':
+            case 'submitted':
+            case 'Sent': return { color: 'bg-blue-100 text-blue-600', icon: Info }; // Incoming
             default: return { color: 'bg-slate-100 text-slate-500', icon: MessageSquare };
         }
     };
@@ -56,24 +59,25 @@ const NavNotifications = () => {
                                     notifications.map((note) => {
                                         const { color, icon: Icon } = getStatusConfig(note.status);
                                         return (
-                                            <div k={note.id} className="p-4 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 relative group">
+                                            <div key={note.id || Math.random()} className={`p-4 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 relative group ${!note.isRelevant ? 'opacity-50' : ''}`}>
                                                 <div className="flex gap-3">
                                                     <div className={`w-8 h-8 rounded-full ${color} flex items-center justify-center flex-shrink-0`}>
                                                         <Icon size={14} />
                                                     </div>
                                                     <div>
                                                         <p className="text-xs font-bold text-slate-900 mb-0.5">
-                                                            {note.status === 'Sent' ? 'New Request' : `Request ${note.status}`}
+                                                            {note.title}
                                                         </p>
                                                         <p className="text-xs text-slate-500 leading-snug">
-                                                            {note.innovationTitle}
+                                                            {note.subtitle}
                                                         </p>
+                                                        {note.status && <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">{note.status}</p>}
                                                         <p className="text-[10px] text-slate-400 mt-1">
-                                                            {new Date(note.createdAt?.seconds * 1000).toLocaleDateString()}
+                                                            {note.date ? new Date(note.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent'}
                                                         </p>
                                                     </div>
                                                 </div>
-                                                {note.status === 'Sent' && (
+                                                {note.isRelevant && (
                                                     <div className="mt-2 pl-11">
                                                         <span className="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded">Action Required</span>
                                                     </div>

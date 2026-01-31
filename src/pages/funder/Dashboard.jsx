@@ -9,6 +9,7 @@ import {
   PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
 import { Sparkles, TrendingUp, AlertCircle, CheckCircle, PieChart as PieIcon, BarChart3, Database, Users } from 'lucide-react';
+import { ShootingStars } from '../../components/ui/shooting-stars';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
@@ -109,13 +110,21 @@ const Dashboard = () => {
         const title = i.innovationTitle || "Unknown Project";
         projects[title] = (projects[title] || 0) + i.amount;
       });
+      // Domain Distribution
+      const domains = {};
+      investments.forEach(i => {
+        domains[i.domain] = (domains[i.domain] || 0) + i.amount;
+      });
+      const domainData = Object.entries(domains).map(([name, value]) => ({ name, value }));
+
       const projectData = Object.entries(projects).map(([name, value]) => ({ name, value }));
 
       setStats({
         totalInvested: total,
         activeProjects: active,
         successRate: 85, // Mock
-        projectDistribution: projectData
+        projectDistribution: projectData,
+        domainDistribution: domainData
       });
 
       // Get AI Insights
@@ -133,119 +142,194 @@ const Dashboard = () => {
   if (loading) return <div className="animate-pulse">Loading dashboard...</div>;
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Welcome back, Funder</h1>
-          <p className="text-slate-500">Here's an AI-powered overview of your R&D investments.</p>
-        </div>
-        <button
-          onClick={async () => {
-            await seedDemoData();
-            alert('Demo proposals seeded!');
-            fetchDashboardData();
-          }}
-          className="btn-secondary flex items-center gap-2 border-slate-200"
-        >
-          <Database className="w-4 h-4" />
-          Seed Demo Proposals
-        </button>
+    <div className="relative w-full min-h-screen overflow-hidden">
+      {/* Background Stars */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <ShootingStars
+          starColor="#9E00FF"
+          trailColor="#2EB9DF"
+          minSpeed={15}
+          maxSpeed={35}
+          minDelay={1000}
+          maxDelay={3000}
+        />
+        <ShootingStars
+          starColor="#FF0099"
+          trailColor="#FFB800"
+          minSpeed={10}
+          maxSpeed={25}
+          minDelay={2000}
+          maxDelay={4000}
+        />
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: 'Total Invested', value: `$${(stats.totalInvested / 1000000).toFixed(1)}M`, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Active Projects', value: stats.activeProjects, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: 'Avg. Success Rate', value: `${stats.successRate}%`, icon: Sparkles, color: 'text-purple-600', bg: 'bg-purple-50' },
-          { label: 'Risk Alert', value: 'Low', icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50' },
-        ].map((stat, i) => (
-          <div key={i} className="glass-card p-6 rounded-2xl flex items-center gap-4">
-            <div className={`${stat.bg} p-3 rounded-xl`}>
-              <stat.icon className={`${stat.color} w-6 h-6`} />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.label}</p>
-              <p className="text-2xl font-black text-slate-900">{stat.value}</p>
-            </div>
+      {/* Main Content */}
+      <div className="relative z-10 space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Welcome back, Funder</h1>
+            <p className="text-slate-500">Here's an AI-powered overview of your R&D investments.</p>
           </div>
-        ))}
-      </div>
-
-      {/* AI Insights Card */}
-      <div className="bg-gradient-to-r from-primary-600 to-indigo-700 p-8 rounded-3xl text-white shadow-xl shadow-primary-200 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-          <Sparkles className="w-32 h-32" />
+          <button
+            onClick={async () => {
+              await seedDemoData();
+              alert('Demo proposals seeded!');
+              fetchDashboardData();
+            }}
+            className="btn-secondary flex items-center gap-2 border-slate-200 bg-white/80 backdrop-blur-sm"
+          >
+            <Database className="w-4 h-4" />
+            Seed Demo Proposals
+          </button>
         </div>
-        <div className="relative z-10 flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-5 h-5 text-primary-300" />
-            <h2 className="text-lg font-bold">AI Portfolio Analyst</h2>
-          </div>
-          <p className="text-2xl font-medium text-primary-50 leading-snug">
-            "{aiInsights}"
-          </p>
-        </div>
-        <button className="relative z-10 bg-white text-primary-700 px-6 py-3 rounded-2xl font-bold hover:bg-primary-50 transition-all shadow-lg">
-          Generate Full Insight Report
-        </button>
-      </div>
 
-      {/* Incoming Funding Requests */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-          <Users className="w-5 h-5 text-primary-600" /> Incoming Proposals
-        </h2>
-        {fundingRequests.length === 0 ? (
-          <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400">
-            No pending requests.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {fundingRequests.map(req => (
-              <div key={req.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-primary-600 bg-primary-50 px-2 py-1 rounded-lg">New Request</span>
-                    <h3 className="font-bold text-slate-900 mt-2">{req.innovationTitle || `Innovation #${req.innovationId.substring(0, 5)}`}</h3>
-                    <p className="text-xs font-bold text-emerald-600 mt-1">Requested: ${Number(req.requestedAmount || 0).toLocaleString()}</p>
-                  </div>
-                  <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
-                    {req.createdAt?.toDate ? new Date(req.createdAt.toDate()).toLocaleDateString() : 'Just now'}
-                  </span>
-                </div>
-
-                <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl italic border border-slate-100">
-                  "{req.lastMessage}"
-                </p>
-
-                <div className="flex gap-2 pt-2">
-                  <button
-                    onClick={() => handleRequestAction(req, 'Approved')}
-                    className="flex-1 btn-primary py-2 text-xs flex items-center justify-center gap-1"
-                  >
-                    <CheckCircle size={14} /> Approve
-                  </button>
-                  <button
-                    onClick={() => handleRequestAction(req, 'Rejected')}
-                    className="flex-1 py-2 rounded-xl border border-slate-200 font-bold text-slate-500 hover:bg-slate-50 text-xs"
-                  >
-                    Reject
-                  </button>
-                </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { label: 'Total Invested', value: `$${(stats.totalInvested / 1000000).toFixed(1)}M`, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'Active Projects', value: stats.activeProjects, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
+            { label: 'Avg. Success Rate', value: `${stats.successRate}%`, icon: Sparkles, color: 'text-purple-600', bg: 'bg-purple-50' },
+            { label: 'Risk Alert', value: 'Low', icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50' },
+          ].map((stat, i) => (
+            <div key={i} className="glass-card p-6 rounded-2xl flex items-center gap-4 bg-white/80 backdrop-blur-md">
+              <div className={`${stat.bg} p-3 rounded-xl`}>
+                <stat.icon className={`${stat.color} w-6 h-6`} />
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.label}</p>
+                <p className="text-2xl font-black text-slate-900">{stat.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
 
-      {/* Recent Activity Section */}
-      <div className="bg-slate-900 text-white p-8 rounded-3xl">
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-emerald-400" /> Recent Activity
-        </h2>
+        {/* AI Insights Card */}
+        <div className="bg-gradient-to-r from-primary-600 to-indigo-700 p-8 rounded-3xl text-white shadow-xl shadow-primary-200 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Sparkles className="w-32 h-32" />
+          </div>
+          <div className="relative z-10 flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="w-5 h-5 text-primary-300" />
+              <h2 className="text-lg font-bold">AI Portfolio Analyst</h2>
+            </div>
+            <p className="text-2xl font-medium text-primary-50 leading-snug">
+              "{aiInsights}"
+            </p>
+          </div>
+          <button className="relative z-10 bg-white text-primary-700 px-6 py-3 rounded-2xl font-bold hover:bg-primary-50 transition-all shadow-lg">
+            Generate Full Insight Report
+          </button>
+        </div>
+
+        {/* Incoming Funding Requests */}
         <div className="space-y-4">
-          <p className="text-slate-400 italic">No recent system activity.</p>
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary-600" /> Incoming Proposals
+          </h2>
+          {fundingRequests.length === 0 ? (
+            <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 bg-white/50 backdrop-blur-sm">
+              No pending requests.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {fundingRequests.map(req => (
+                <div key={req.id} className="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-primary-600 bg-primary-50 px-2 py-1 rounded-lg">New Request</span>
+                      <h3 className="font-bold text-slate-900 mt-2">{req.innovationTitle || `Innovation #${req.innovationId.substring(0, 5)}`}</h3>
+                      <p className="text-xs font-bold text-emerald-600 mt-1">Requested: ${Number(req.requestedAmount || 0).toLocaleString()}</p>
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                      {req.createdAt?.toDate ? new Date(req.createdAt.toDate()).toLocaleDateString() : 'Just now'}
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl italic border border-slate-100">
+                    "{req.lastMessage}"
+                  </p>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={() => handleRequestAction(req, 'Approved')}
+                      className="flex-1 btn-primary py-2 text-xs flex items-center justify-center gap-1"
+                    >
+                      <CheckCircle size={14} /> Approve
+                    </button>
+                    <button
+                      onClick={() => handleRequestAction(req, 'Rejected')}
+                      className="flex-1 py-2 rounded-xl border border-slate-200 font-bold text-slate-500 hover:bg-slate-50 text-xs"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card p-8 rounded-3xl space-y-6 bg-white/80 backdrop-blur-md">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                <PieIcon className="w-5 h-5 text-primary-600" />
+                Domain Allocation
+              </h3>
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={stats.domainDistribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {stats.domainDistribution?.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="glass-card p-8 rounded-3xl space-y-6 bg-white/80 backdrop-blur-md">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary-600" />
+                Investment Growth
+              </h3>
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.domainDistribution}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Activity Section */}
+        <div className="bg-slate-900 text-white p-8 rounded-3xl">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-emerald-400" /> Recent Activity
+          </h2>
+          <div className="space-y-4">
+            <p className="text-slate-400 italic">No recent system activity.</p>
+          </div>
         </div>
       </div>
     </div>

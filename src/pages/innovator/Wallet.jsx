@@ -9,25 +9,69 @@ const Wallet = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!auth.currentUser) return;
+
     const q = query(
       collection(db, "investments"),
       where("innovatorId", "==", auth.currentUser.uid),
       where("status", "==", "active")
     );
 
-    const unsubscribe = onSnapshot(q, (snap) => {
-      let totalAllocated = 0;
-      snap.docs.forEach(doc => {
-        totalAllocated += Number(doc.data().amount) || 0;
+    const unsubscribeInvestments = onSnapshot(q, (snap) => {
+      const activeInvestments = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      let totalGrantAmount = 0;
+      activeInvestments.forEach(inv => totalGrantAmount += (Number(inv.amount) || 0));
+
+      // Map to store released amount per investment to avoid race conditions with multiple listeners
+      const releasedPerInvestment = {};
+
+      if (activeInvestments.length === 0) {
+        setWallet({ released: 0, pending: 0 });
+        setLoading(false);
+        return;
+      }
+
+      // Track how many listeners we are waiting for (optional, but good for loading state)
+      // We will just update state as headers come in.
+
+      const milestoneUnsubscribes = activeInvestments.map(inv => {
+        return onSnapshot(collection(db, "investments", inv.id, "milestones"), (msSnap) => {
+          let invReleased = 0;
+          msSnap.docs.forEach(mDoc => {
+            const mData = mDoc.data();
+            // Check for Verified status (and legacy 'approved' just in case)
+            if (mData.status === 'Verified' || mData.status === 'approved') {
+              invReleased += (Number(mData.amount) || 0);
+            }
+          });
+
+          releasedPerInvestment[inv.id] = invReleased;
+
+          // Recalculate totals whenever any investment's milestones change
+          const totalReleased = Object.values(releasedPerInvestment).reduce((a, b) => a + b, 0);
+          const totalPending = Math.max(0, totalGrantAmount - totalReleased); // Ensure no negative pending
+
+          setWallet({
+            released: totalReleased,
+            pending: totalPending
+          });
+          setLoading(false);
+        }, (error) => {
+          console.error("Error listening to milestones for project", inv.id, error);
+        });
       });
 
-      setWallet({
-        released: 0, // Placeholder until milestone payouts are implemented
-        pending: totalAllocated
-      });
-      setLoading(false);
+      // Cleanup milestone listeners when investments change or component unmounts
+      return () => {
+        milestoneUnsubscribes.forEach(unsub => unsub());
+      };
+
     });
-    return unsubscribe;
+
+    return () => {
+      unsubscribeInvestments();
+    };
   }, []);
 
   return (
