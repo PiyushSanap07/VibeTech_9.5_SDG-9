@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../../firebase/config';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { Wallet as WalletIcon, ArrowUpRight, TrendingUp, ShieldCheck, Zap, History, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -9,10 +9,22 @@ const Wallet = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(doc(db, "users", auth.currentUser.uid), (snap) => {
-      if (snap.exists() && snap.data().wallet) {
-        setWallet(snap.data().wallet);
-      }
+    const q = query(
+      collection(db, "investments"),
+      where("innovatorId", "==", auth.currentUser.uid),
+      where("status", "==", "active")
+    );
+
+    const unsubscribe = onSnapshot(q, (snap) => {
+      let totalAllocated = 0;
+      snap.docs.forEach(doc => {
+        totalAllocated += Number(doc.data().amount) || 0;
+      });
+
+      setWallet({
+        released: 0, // Placeholder until milestone payouts are implemented
+        pending: totalAllocated
+      });
       setLoading(false);
     });
     return unsubscribe;
@@ -46,15 +58,15 @@ const Wallet = () => {
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="premium-card p-10 space-y-8">
           <div className="flex items-center justify-between">
             <div className="p-3 bg-amber-50 rounded-2xl text-amber-600"><Zap size={24} /></div>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pending Approval</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Approved Funding</span>
           </div>
           <div className="space-y-1">
             <p className="text-5xl font-black tracking-tighter text-slate-900">${wallet.pending?.toLocaleString()}</p>
-            <p className="text-xs font-bold text-slate-400">Allocated to active milestones</p>
+            <p className="text-xs font-bold text-slate-400">Start milestones to unlock</p>
           </div>
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center space-x-3">
             <ShieldCheck size={20} className="text-emerald-500" />
-            <p className="text-[10px] font-bold text-slate-500 leading-tight uppercase tracking-tight">Funds are released automatically upon milestone verification.</p>
+            <p className="text-[10px] font-bold text-slate-500 leading-tight uppercase tracking-tight">Funds are locked in smart escrow until verified.</p>
           </div>
         </motion.div>
       </div>

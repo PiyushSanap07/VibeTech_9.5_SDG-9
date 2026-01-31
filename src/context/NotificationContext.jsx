@@ -46,9 +46,11 @@ export const NotificationProvider = ({ children }) => {
                 id: doc.id,
                 ...doc.data(),
                 // Helper logic to determine if it should be "active" notification
-                // For funders: New 'Sent' requests are notifications
-                // For innovators: 'Approved' or 'Rejected' requests are notifications
-                isRelevant: userRole === 'funder' ? doc.data().status === 'Pending' || doc.data().status === 'Sent' : doc.data().status !== 'Sent'
+                // For funders: 'Pending' requests are notifications
+                // For innovators: 'Approved' or 'Rejected' requests are notifications (ignore 'Pending' which they sent themselves)
+                isRelevant: userRole === 'funder'
+                    ? ['Pending', 'Sent'].includes(doc.data().status)
+                    : ['Approved', 'Rejected'].includes(doc.data().status)
             }));
 
             setNotifications(notes);

@@ -23,7 +23,6 @@ import InnovatorProfile from './pages/innovator/Profile';
 import InnovatorInnovations from './pages/innovator/Innovations';
 import InnovatorFunders from './pages/innovator/Funders';
 import InnovatorFunderProfile from './pages/innovator/FunderProfile';
-import InnovatorMessages from './pages/innovator/Messages';
 import InnovatorMilestones from './pages/innovator/Milestones';
 import InnovatorWallet from './pages/innovator/Wallet';
 
@@ -103,7 +102,6 @@ function App() {
               <Route path="innovations" element={<InnovatorInnovations />} />
               <Route path="funders" element={<InnovatorFunders />} />
               <Route path="funders/:id" element={<InnovatorFunderProfile />} />
-              <Route path="messages" element={<InnovatorMessages />} />
               <Route path="milestones" element={<InnovatorMilestones />} />
               <Route path="wallet" element={<InnovatorWallet />} />
             </Route>

@@ -17,7 +17,8 @@ const MilestoneModal = ({ project, onClose, onUpdate }) => {
 
   const fetchMilestones = async () => {
     try {
-      const q = query(collection(db, 'milestones'), where('projectId', '==', project.id));
+      // Corrected: Read from subcollection
+      const q = collection(db, 'investments', project.id, 'milestones');
       const querySnapshot = await getDocs(q);
       const docs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setMilestones(docs);
@@ -50,8 +51,8 @@ const MilestoneModal = ({ project, onClose, onUpdate }) => {
 
   const approveMilestone = async (milestone) => {
     try {
-      await updateDoc(doc(db, 'milestones', milestone.id), {
-        status: 'approved',
+      await updateDoc(doc(db, 'investments', project.id, 'milestones', milestone.id), {
+        status: 'Verified',
         approvedAt: serverTimestamp()
       });
       // Update project progress
@@ -120,16 +121,16 @@ const MilestoneModal = ({ project, onClose, onUpdate }) => {
                       </div>
                       <span className={clsx(
                         "px-3 py-1 rounded-full text-[10px] font-bold uppercase",
-                        m.status === 'approved' ? 'bg-green-100 text-green-700' :
-                          m.status === 'submitted' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
+                        m.status === 'Verified' ? 'bg-green-100 text-green-700' :
+                          (m.status === 'Pending' || m.status === 'submitted') ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
                       )}>
                         {m.status}
                       </span>
                     </div>
 
-                    <p className="text-sm text-slate-600 mb-6">{m.description}</p>
+                    <p className="text-sm text-slate-600 mb-6">{m.description || 'No description provided.'}</p>
 
-                    {m.status === 'submitted' && (
+                    {(m.status === 'Pending' || m.status === 'submitted') && (
                       <div className="space-y-4">
                         <button
                           onClick={() => handleAIReview(m)}

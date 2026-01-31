@@ -16,7 +16,7 @@ const Dashboard = () => {
     totalInvested: 0,
     activeProjects: 0,
     successRate: 0,
-    domainDistribution: []
+    projectDistribution: []
   });
   const [aiInsights, setAiInsights] = useState("");
   const [loading, setLoading] = useState(true);
@@ -100,21 +100,22 @@ const Dashboard = () => {
       const snap = await getDocs(q);
       const investments = snap.docs.map(doc => doc.data());
 
-      const total = investments.reduce((acc, curr) => acc + curr.amount, 0);
+      const total = investments.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
       const active = investments.filter(i => i.status === 'active').length;
 
-      // Domain Distribution
-      const domains = {};
+      // Project Distribution
+      const projects = {};
       investments.forEach(i => {
-        domains[i.domain] = (domains[i.domain] || 0) + i.amount;
+        const title = i.innovationTitle || "Unknown Project";
+        projects[title] = (projects[title] || 0) + i.amount;
       });
-      const domainData = Object.entries(domains).map(([name, value]) => ({ name, value }));
+      const projectData = Object.entries(projects).map(([name, value]) => ({ name, value }));
 
       setStats({
         totalInvested: total,
         activeProjects: active,
         successRate: 85, // Mock
-        domainDistribution: domainData
+        projectDistribution: projectData
       });
 
       // Get AI Insights
@@ -238,55 +239,13 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="glass-card p-8 rounded-3xl space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <PieIcon className="w-5 h-5 text-primary-600" />
-              Domain Allocation
-            </h3>
-          </div>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={stats.domainDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {stats.domainDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="glass-card p-8 rounded-3xl space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-primary-600" />
-              Investment Growth
-            </h3>
-          </div>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.domainDistribution}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Recent Activity Section */}
+      <div className="bg-slate-900 text-white p-8 rounded-3xl">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-emerald-400" /> Recent Activity
+        </h2>
+        <div className="space-y-4">
+          <p className="text-slate-400 italic">No recent system activity.</p>
         </div>
       </div>
     </div>

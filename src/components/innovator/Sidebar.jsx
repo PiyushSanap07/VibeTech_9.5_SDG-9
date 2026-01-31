@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, User, Lightbulb, Users,
-  MessageSquare, FileText, ListChecks, Wallet, Sparkles
+  FileText, ListChecks, Wallet, Sparkles
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -14,7 +14,6 @@ const Sidebar = ({ user }) => {
     { path: '/innovator/profile', icon: User, label: 'Profile' },
     { path: '/innovator/innovations', icon: Lightbulb, label: 'Innovations' },
     { path: '/innovator/funders', icon: Users, label: 'Funders' },
-    { path: '/innovator/messages', icon: MessageSquare, label: 'Messages' },
     { path: '/innovator/milestones', icon: ListChecks, label: 'Milestones' },
     { path: '/innovator/wallet', icon: Wallet, label: 'Wallet' },
   ];

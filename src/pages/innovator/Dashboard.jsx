@@ -9,37 +9,29 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import ProposalForm from './ProposalForm';
 import LiveFundersShowcase from '../../components/innovator/LiveFundersShowcase';
 import { useAuth } from '../../context/AuthContext';
 
 const Dashboard = () => {
   const { userData } = useAuth();
   const navigate = useNavigate();
-  const [proposals, setProposals] = useState([]);
   const [innovations, setInnovations] = useState([]);
   // const [funders, setFunders] = useState([]); // Removed in favor of LiveFundersShowcase
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isFormOpen, setIsFormOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     const uid = auth.currentUser.uid;
 
-    // 1. Real-time Proposals
-    const qP = query(collection(db, "proposals"), where("userId", "==", uid));
-    const unsubP = onSnapshot(qP, (snap) => {
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setProposals(data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
-      setLoading(false);
-    });
+
 
     // 2. Real-time Innovations
     const qI = query(collection(db, "innovations"), where("userId", "==", uid));
     const unsubI = onSnapshot(qI, (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setInnovations(data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+      setLoading(false);
     });
 
     // 3. Funders now handled by LiveFundersShowcase component
@@ -53,7 +45,6 @@ const Dashboard = () => {
     });
 
     return () => {
-      unsubP();
       unsubI();
       unsubR();
     };
@@ -117,8 +108,7 @@ const Dashboard = () => {
       <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {[
           { label: 'Platform Portfolio', value: innovations.length, sub: 'Published Innovations', icon: Lightbulb, color: 'text-amber-600', bg: 'bg-amber-50' },
-          { label: 'Capital Requests', value: requests.length, sub: 'Active Funder Dialogues', icon: MessageSquare, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { label: 'Active Pipeline', value: proposals.length, sub: 'Proposals in Review', icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' }
+          { label: 'Capital Requests', value: requests.length, sub: 'Active Funder Dialogues', icon: MessageSquare, color: 'text-indigo-600', bg: 'bg-indigo-50' }
         ].map((stat, i) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="premium-card p-8 group">
             <div className="flex items-center justify-between mb-4">
@@ -143,6 +133,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* Main Content: Innovations & Proposals */}
         <div className="lg:col-span-8 space-y-10">
+
 
           {/* Recent Innovations Widget */}
           <div className="premium-card overflow-hidden">
@@ -181,41 +172,6 @@ const Dashboard = () => {
               )}
             </div>
           </div>
-
-          {/* Proposals Widget */}
-          <div className="premium-card overflow-hidden">
-            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
-              <h2 className="text-xl font-extrabold text-slate-900 flex items-center">
-                <FileText size={20} className="mr-2 text-primary-600" /> Active Proposals
-              </h2>
-              <Link to="/innovator/proposals" className="text-xs font-black text-primary-600 uppercase tracking-widest hover:underline">Manage All</Link>
-            </div>
-            <div className="p-2">
-              {loading ? (
-                <div className="p-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs animate-pulse">Accessing Intel...</div>
-              ) : proposals.length === 0 ? (
-                <div className="p-12 text-center space-y-4">
-                  <p className="text-slate-400 text-sm font-medium">No formal proposals active in the pipeline.</p>
-                  <button onClick={() => setIsFormOpen(true)} className="btn-secondary !text-xs !py-2">Submit New Proposal</button>
-                </div>
-              ) : (
-                <div className="divide-y divide-slate-100">
-                  {proposals.slice(0, 5).map(p => (
-                    <Link key={p.id} to={`/proposal/${p.id}`} className="flex items-center justify-between p-6 hover:bg-slate-50/80 transition-all group">
-                      <div className="space-y-1">
-                        <h3 className="font-bold text-slate-900 group-hover:text-primary-600 transition-colors">{p.title}</h3>
-                        <div className="flex items-center space-x-3">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">${parseFloat(p.budget).toLocaleString()}</span>
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter ${p.status === 'Funded' ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-100 text-indigo-600'}`}>{p.status}</span>
-                        </div>
-                      </div>
-                      <ChevronRight size={18} className="text-slate-300 group-hover:text-primary-600 group-hover:translate-x-1 transition-all" />
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Sidebar: Recommended Funders & Requests */}
@@ -235,7 +191,6 @@ const Dashboard = () => {
               <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-400 flex items-center">
                 <MessageSquare size={18} className="mr-2" /> Live Requests
               </h3>
-              <Link to="/innovator/messages" className="text-[10px] font-black text-slate-400 uppercase hover:text-white transition-colors">Inbox</Link>
             </div>
 
             <div className="space-y-6">
@@ -252,14 +207,14 @@ const Dashboard = () => {
                 </div>
               ) : (
                 requests.slice(0, 3).map(r => (
-                  <Link key={r.id} to="/innovator/messages" className="flex items-center space-x-4 group border-b border-white/5 pb-4 last:border-0 last:pb-0">
+                  <div key={r.id} className="flex items-center space-x-4 group border-b border-white/5 pb-4 last:border-0 last:pb-0">
                     <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-black text-white group-hover:text-primary-400 transition-colors truncate">{r.funderName}</p>
                       <p className="text-[10px] font-bold text-slate-500 truncate">{r.lastMessage}</p>
                     </div>
                     <span className="text-[9px] font-black text-primary-500 bg-primary-500/10 px-2 py-0.5 rounded uppercase">{r.status}</span>
-                  </Link>
+                  </div>
                 ))
               )}
             </div>
@@ -268,9 +223,7 @@ const Dashboard = () => {
         </aside>
       </div>
 
-      {isFormOpen && (
-        <ProposalForm onClose={() => setIsFormOpen(false)} onRefresh={fetchAllData} />
-      )}
+
     </div>
   );
 };

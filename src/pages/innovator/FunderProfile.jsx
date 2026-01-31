@@ -225,13 +225,7 @@ const FunderProfile = () => {
                   <Zap size={20} />
                   <span>Request Funding</span>
                 </button>
-                <button
-                  onClick={() => navigate('/innovator/messages')}
-                  className="w-full btn-secondary !py-4 !border-slate-200 flex items-center justify-center space-x-3"
-                >
-                  <MessageSquare size={20} />
-                  <span>Open Dialogue</span>
-                </button>
+
               </div>
               <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
                 Requests are analyzed by our AI to ensure compatibility before transmission.
