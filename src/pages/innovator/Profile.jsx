@@ -4,6 +4,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { Sparkles, Save, Plus, X, User, Briefcase, Globe, Award, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getMockProfileHelp } from '../../utils/aiFallback';
 
 const Profile = () => {
   const [profile, setProfile] = useState({
@@ -61,7 +62,13 @@ const Profile = () => {
       setSuggestedSkills(suggestions);
     } catch (err) {
       console.error(err);
-      alert("AI generation failed. Please try again.");
+      // Fallback to mock data
+      console.warn("AI service failed, using fallback data.");
+      const { bio, suggestedSkills: suggestions } = getMockProfileHelp(profile.domain, profile.skills);
+      setProfile({ ...profile, bio });
+      setSuggestedSkills(suggestions);
+      setMessage('AI suggestions generated (Offline Mode)');
+      setTimeout(() => setMessage(''), 3000);
     } finally {
       setAiLoading(false);
     }

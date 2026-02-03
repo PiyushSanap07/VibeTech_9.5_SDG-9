@@ -28,7 +28,7 @@ const Funders = () => {
     setLoading(true);
     try {
       // Query "users" collection for users with role "funder"
-      const q = query(collection(db, "users"), where("role", "==", "funder"), limit(20));
+      const q = query(collection(db, "users"), where("role", "==", "funder"), limit(100));
       const snap = await getDocs(q);
 
       if (snap.empty) {

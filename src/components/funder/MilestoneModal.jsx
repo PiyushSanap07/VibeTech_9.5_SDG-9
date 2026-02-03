@@ -7,8 +7,7 @@ import { X, Sparkles, CheckCircle2, Clock, AlertCircle, DollarSign, BrainCircuit
 const MilestoneModal = ({ project, onClose, onUpdate }) => {
   const [milestones, setMilestones] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [aiReviewing, setAiReviewing] = useState(null); // ID of milestone being reviewed
-  const [aiAnalysis, setAiAnalysis] = useState({}); // Map of milestone ID to analysis
+
   const [escrowInfo, setEscrowInfo] = useState({ locked: 0, released: 0 });
 
   useEffect(() => {
@@ -36,18 +35,7 @@ const MilestoneModal = ({ project, onClose, onUpdate }) => {
     }
   };
 
-  const handleAIReview = async (milestone) => {
-    try {
-      setAiReviewing(milestone.id);
-      const reviewMilestone = httpsCallable(functions, 'reviewMilestone');
-      const result = await reviewMilestone({ milestone, projectPlan: project });
-      setAiAnalysis(prev => ({ ...prev, [milestone.id]: result.data }));
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setAiReviewing(null);
-    }
-  };
+
 
   const approveMilestone = async (milestone) => {
     try {
@@ -111,7 +99,6 @@ const MilestoneModal = ({ project, onClose, onUpdate }) => {
             </h3>
             <div className="space-y-4">
               {milestones.map((m, idx) => {
-                const analysis = aiAnalysis[m.id];
                 return (
                   <div key={m.id} className="glass-card p-6 rounded-2xl border-l-4 border-l-slate-200">
                     <div className="flex items-start justify-between mb-4">
@@ -132,33 +119,7 @@ const MilestoneModal = ({ project, onClose, onUpdate }) => {
 
                     {(m.status === 'Pending' || m.status === 'submitted') && (
                       <div className="space-y-4">
-                        <button
-                          onClick={() => handleAIReview(m)}
-                          disabled={aiReviewing === m.id}
-                          className="w-full flex items-center justify-center gap-2 py-3 bg-slate-50 hover:bg-slate-100 rounded-xl text-primary-600 font-bold text-sm border border-primary-100 transition-all"
-                        >
-                          <BrainCircuit className="w-4 h-4" />
-                          {aiReviewing === m.id ? 'AI Reviewing...' : 'Review with AI'}
-                        </button>
 
-                        {analysis && (
-                          <div className="bg-primary-50/50 p-4 rounded-xl border border-primary-100 animate-in fade-in">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Sparkles className="w-4 h-4 text-primary-600" />
-                              <span className="text-xs font-bold text-primary-900 uppercase">AI Review Summary</span>
-                            </div>
-                            <p className="text-xs text-primary-800 italic mb-3">"{analysis.summary}"</p>
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold text-slate-500">PROGRESS ALIGNMENT:</span>
-                              <span className={clsx(
-                                "text-[10px] font-black",
-                                analysis.isAligned ? "text-green-600" : "text-red-600"
-                              )}>
-                                {analysis.isAligned ? 'ALIGNED' : 'DISCREPANCY DETECTED'}
-                              </span>
-                            </div>
-                          </div>
-                        )}
 
                         <div className="flex gap-3">
                           <button

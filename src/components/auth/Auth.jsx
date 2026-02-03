@@ -5,7 +5,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const Auth = ({ role = "innovator", initialMode = "login" }) => {
-    // Logic from previous Auth.jsx
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -18,16 +17,12 @@ const Auth = ({ role = "innovator", initialMode = "login" }) => {
     const { login, register } = useAuth();
     const navigate = useNavigate();
 
-    // New UI Logic
+    // UI Logic
     const [isSignIn, setIsSignIn] = useState(initialMode === "login");
-    const [initialized, setInitialized] = useState(false);
 
     useEffect(() => {
-        // Only set initial state once on mount to respect prop
-        // Use timeout as per user snippet for animation kickoff, but respect mode
         const timer = setTimeout(() => {
             setIsSignIn(initialMode === "login");
-            setInitialized(true);
         }, 200);
         return () => clearTimeout(timer);
     }, [initialMode]);
@@ -37,14 +32,12 @@ const Auth = ({ role = "innovator", initialMode = "login" }) => {
         setError("");
     };
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
+    const handleLogin = async () => {
         setError("");
         setLoading(true);
 
         try {
-            const result = await login(email, password);
-            // Navigate based on target role or user role
+            await login(email, password);
             if (role === 'funder') navigate('/funder/dashboard');
             else navigate('/innovator/dashboard');
         } catch (err) {
@@ -54,8 +47,7 @@ const Auth = ({ role = "innovator", initialMode = "login" }) => {
         }
     };
 
-    const handleRegister = async (e) => {
-        e.preventDefault();
+    const handleRegister = async () => {
         if (password !== confirmPassword) {
             setError("Passwords do not match.");
             return;
@@ -75,6 +67,12 @@ const Auth = ({ role = "innovator", initialMode = "login" }) => {
         }
     };
 
+    const handleKeyDown = (e, action) => {
+        if (e.key === 'Enter') {
+            action();
+        }
+    };
+
     return (
         <div className="auth-wrapper">
             <div id="container" className={`container ${isSignIn ? "sign-in" : "sign-up"}`}>
@@ -83,60 +81,57 @@ const Auth = ({ role = "innovator", initialMode = "login" }) => {
                     {/* SIGN UP */}
                     <div className="col align-items-center flex-col sign-up">
                         <div className="form-wrapper align-items-center">
-                            <form className="form sign-up" onSubmit={handleRegister}>
+                            <div className="form sign-up" onKeyDown={(e) => handleKeyDown(e, handleRegister)}>
                                 <div className="input-group">
-                                    <i className="icon"><User size={20} /></i>
+                                    <i><User size={20} /></i>
                                     <input type="text" placeholder="Username" value={name} onChange={(e) => setName(e.target.value)} required />
                                 </div>
                                 <div className="input-group">
-                                    <i className="icon"><Mail size={20} /></i>
+                                    <i><Mail size={20} /></i>
                                     <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                                 </div>
                                 <div className="input-group">
-                                    <i className="icon"><Lock size={20} /></i>
+                                    <i><Lock size={20} /></i>
                                     <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                                 </div>
                                 <div className="input-group">
-                                    <i className="icon"><Lock size={20} /></i>
+                                    <i><Lock size={20} /></i>
                                     <input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
                                 </div>
 
-                                {error && <p className="text-red-500 text-xs mb-2" style={{ color: 'red' }}>{error}</p>}
+                                {error && <p className="text-red-500 text-xs mb-2" style={{ color: 'red', margin: '0.5rem 0', fontSize: '0.8rem' }}>{error}</p>}
 
-                                <button disabled={loading}>
+                                <button onClick={handleRegister} disabled={loading}>
                                     {loading ? <Loader2 className="animate-spin mx-auto" size={20} /> : "Sign up"}
                                 </button>
-
                                 <p>
                                     <span>Already have an account? </span>
                                     <b onClick={toggle} className="pointer">
                                         Sign in here
                                     </b>
                                 </p>
-                            </form>
+                            </div>
                         </div>
                     </div>
 
                     {/* SIGN IN */}
                     <div className="col align-items-center flex-col sign-in">
                         <div className="form-wrapper align-items-center">
-                            <form className="form sign-in" onSubmit={handleLogin}>
+                            <div className="form sign-in" onKeyDown={(e) => handleKeyDown(e, handleLogin)}>
                                 <div className="input-group">
-                                    {/* User icon replaced with Mail if we are using email login, but user code had User icon. I'll use Mail for clarity since we bind to email state. */}
-                                    <i className="icon"><Mail size={20} /></i>
+                                    <i><Mail size={20} /></i>
                                     <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                                 </div>
                                 <div className="input-group">
-                                    <i className="icon"><Lock size={20} /></i>
+                                    <i><Lock size={20} /></i>
                                     <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                                 </div>
 
-                                {error && <p className="text-red-500 text-xs mb-2" style={{ color: 'red' }}>{error}</p>}
+                                {error && <p className="text-red-500 text-xs mb-2" style={{ color: 'red', margin: '0.5rem 0', fontSize: '0.8rem' }}>{error}</p>}
 
-                                <button disabled={loading}>
+                                <button onClick={handleLogin} disabled={loading}>
                                     {loading ? <Loader2 className="animate-spin mx-auto" size={20} /> : "Sign in"}
                                 </button>
-
                                 <p>
                                     <b>Forgot password?</b>
                                 </p>
@@ -146,13 +141,14 @@ const Auth = ({ role = "innovator", initialMode = "login" }) => {
                                         Sign up here
                                     </b>
                                 </p>
-                            </form>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* CONTENT SECTION */}
                 <div className="row content-row">
+                    {/* SIGN IN CONTENT */}
                     <div className="col align-items-center flex-col">
                         <div className="text sign-in">
                             <h2>Welcome</h2>
@@ -160,6 +156,7 @@ const Auth = ({ role = "innovator", initialMode = "login" }) => {
                         </div>
                     </div>
 
+                    {/* SIGN UP CONTENT */}
                     <div className="col align-items-center flex-col">
                         <div className="text sign-up">
                             <h2>Join with us</h2>

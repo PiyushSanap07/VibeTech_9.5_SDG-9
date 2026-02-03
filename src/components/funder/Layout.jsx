@@ -29,7 +29,7 @@ const Layout = () => {
           <div className="bg-primary-600 p-2 rounded-lg">
             <BrainCircuit className="text-white w-6 h-6" />
           </div>
-          <span className="font-bold text-xl text-slate-900">R&D Match</span>
+          <span className="font-bold text-xl text-slate-900">Funder Hub</span>
         </div>
 
         <nav className="flex-1 px-4 py-4 space-y-1">

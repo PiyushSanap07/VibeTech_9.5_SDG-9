@@ -4,6 +4,7 @@ import { db, functions } from '../../firebase/config';
 import { doc, setDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { Sparkles, Save, Shield, DollarSign, Target } from 'lucide-react';
+import { getMockInvestmentStrategy } from '../../utils/aiFallback';
 
 const Profile = () => {
   const { currentUser, userData } = useAuth();
@@ -26,7 +27,7 @@ const Profile = () => {
     try {
       setSaving(true);
       console.log("Saving preferences:", preferences);
-      const funderRef = doc(db, 'funders', currentUser.uid);
+      const funderRef = doc(db, 'users', currentUser.uid);
 
       await setDoc(funderRef, {
         email: currentUser.email,
@@ -51,7 +52,11 @@ const Profile = () => {
       setAiSuggestions(result.data);
     } catch (error) {
       console.error(error);
-      alert('AI service is currently unavailable');
+      // Fallback to mock data
+      console.warn("AI service failed, using fallback data.");
+      const mockSuggestions = getMockInvestmentStrategy(preferences);
+      setAiSuggestions(mockSuggestions);
+      alert('AI service currently unavailable - showing simulation based on your preferences.');
     } finally {
       setLoading(false);
     }

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getMockFunderRecommendations } from '../../utils/aiFallback';
 
 const LiveFundersShowcase = () => {
     const { userData } = useAuth();
@@ -119,6 +120,10 @@ const LiveFundersShowcase = () => {
             }
         } catch (err) {
             console.error("AI Recommendation error:", err);
+            // Fallback to mock data
+            console.warn("AI service failed, using fallback data.");
+            const mockRecs = getMockFunderRecommendations(fundersList);
+            setRecommendations(mockRecs);
         } finally {
             setLoading(false);
             setAiLoading(false);

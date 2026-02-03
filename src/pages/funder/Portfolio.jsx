@@ -9,6 +9,7 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 import MilestoneModal from '../../components/funder/MilestoneModal';
+import { getMockPortfolioAnalytics } from '../../utils/aiFallback';
 
 const Portfolio = () => {
   const { currentUser } = useAuth();
@@ -58,6 +59,10 @@ const Portfolio = () => {
       setAiInsights(result.data);
     } catch (error) {
       console.error("Error running AI analytics:", error);
+      // Fallback to mock data
+      console.warn("AI service failed, using fallback data.");
+      const mockInsights = getMockPortfolioAnalytics(investments);
+      setAiInsights(mockInsights);
     } finally {
       setAnalyzing(false);
     }

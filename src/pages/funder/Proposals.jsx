@@ -5,6 +5,7 @@ import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../context/AuthContext';
 import { Search, Filter, Sparkles, ChevronRight, AlertTriangle, CheckCircle } from 'lucide-react';
 import ProposalDetailModal from '../../components/funder/ProposalDetailModal';
+import { getMockProposalRankings } from '../../utils/aiFallback';
 
 const Proposals = () => {
   const { userData } = useAuth();
@@ -57,7 +58,16 @@ const Proposals = () => {
       alert('AI Matching complete!');
     } catch (error) {
       console.error("Match Error:", error);
-      alert(`AI Matching failed: ${error.message}`);
+      // Fallback to mock data
+      console.warn("AI service failed, using fallback data.");
+      const mockRankings = getMockProposalRankings(proposals);
+
+      const matchMap = {};
+      mockRankings.forEach(match => {
+        matchMap[match.id] = match;
+      });
+      setAiMatches(matchMap);
+      alert('AI Matching complete (Offline Mode)!');
     } finally {
       setMatching(false);
     }
